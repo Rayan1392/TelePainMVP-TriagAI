@@ -1,9 +1,10 @@
 import re
 import sqlite3
 import requests
+import os
 
 # DeepSeek API setup
-DEEPSEEK_API_KEY = "sk-b186668e725c47c9881dffddf540b87f"
+DEEPSEEK_API_KEY = os.getenv("DEEPSEEK_API_KEY")
 DEEPSEEK_URL = "https://api.deepseek.com/chat/completions"
 MODEL = "deepseek-chat"
 QUESTION_COUNTS = 10
