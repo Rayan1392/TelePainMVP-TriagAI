@@ -57,23 +57,23 @@ def determine_next_question(patient_id, user_input, question_count):
     if question_count == 0:
         # First interaction: Set up initial prompt
         prompt = (
-            f"You are an AI assistant to ask triage questions from a patient who is suffering from pain. "
-            f"I asked the patient, 'What symptoms are you experiencing today?' and the patient answered: {user_input}. "
-            f"Based on this, ask ONLY ONE relevant follow-up question to better understand the patient's condition."
+            f"You are an AI assistant asking triage questions to a patient. "
+            f"The patient said: {user_input}. "
+            f"Ask ONLY ONE relevant follow-up question to better understand the patient's condition."
         )
     else:
         # Fetch conversation history and generate only ONE follow-up question at a time
         conversation = "\n".join([f"You: {u}\nAI: {a}" for u, a in history])
         prompt = (
             f"{conversation}\nYou: {user_input}\n"
-            f"AI: Ask ONLY ONE relevant follow-up question to better assess the patient's condition."
+            f"Ask ONLY ONE relevant follow-up question to better assess the patient's condition."
         )
 
     # API request to Ollama
     payload = {
         "model": MODEL,  # Change to your preferred model
         "prompt": prompt,
-        "num_predict": 150,  # Limit to a short response to ensure one question at a time
+        "num_predict": 100,  # Limit to a short response to ensure one question at a time
         "temperature": 0.7,
         "stream": False
     }
