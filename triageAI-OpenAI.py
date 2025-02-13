@@ -34,6 +34,7 @@ def init_db():
     conn.close()
 
 class ChatRequest(BaseModel):
+    question_count : int
     patient_id: str
     user_input: str
 
@@ -64,7 +65,7 @@ def clean_ai_response(response):
 def get_ai_response(prompt, max_tokens=150):
     response = client.chat.completions.create(
         model=MODEL,
-        messages=[{"role": "system", "content": "You are a helpful medical AI assistant."},
+        messages=[{"role": "system", "content": "You are an AI assistant asking triage questions to a patient in pain. Based on this, ask ONLY ONE relevant follow-up question."},
                   {"role": "user", "content": prompt}],
         temperature=0.7,
         max_tokens=max_tokens
@@ -79,13 +80,13 @@ def determine_next_question(patient_id, user_input, question_count):
         prompt = (
             f"You are an AI assistant asking triage questions to a patient in pain. "
             f"I asked, 'What symptoms are you experiencing today?' and the patient answered: {user_input}. "
-            f"Based on this, ask ONLY ONE relevant follow-up question."
+            f"Based on this, ask ONLY ONE relevant follow-up question, please detect and speak to user language."
         )
     else:
         conversation = "\n".join([f"You: {u}\nAI: {a}" for u, a in history])
         prompt = (
             f"{conversation}\nYou: {user_input}\nAI: "
-            f"Ask ONLY ONE relevant follow-up question to better assess the patient's condition."
+            f"Ask ONLY ONE relevant follow-up question to better assess the patient's condition. please give advice to patinet in less that 10 answers. answer count: {len(history)}"
         )
     
     ai_response = get_ai_response(prompt, max_tokens=100)
@@ -138,11 +139,18 @@ def chatbot():
 # API Endpoint
 @app.post("/chat")
 def chat(request: ChatRequest):
-    prompt = f"User: {request.user_input}\nAI: Generate a relevant response."
-    ai_response = get_ai_response(prompt)
+    question_count = request.question_count
+    prompt = f"{request.user_input}"
+    # if question_count >= QUESTION_COUNTS:
+    #         ai_advice = provide_advice_and_appointment(request.patient_id)
+    #         ai_advice += f"AI: Here's some advice based on your symptoms: \n{ai_advice}"
+    #         ai_summary = generate_summary_report(request.patient_id)
+    #         return {"response": f"{ai_advice} \nAI: Here’s a summary report of your symptoms and responses: \n{ai_summary}"}
+            
+    ai_response = determine_next_question(request.patient_id, prompt, question_count)
     cleaned_response = clean_ai_response(ai_response)
 
-    save_memory(request.patient_id, request.user_input, cleaned_response)
+    # save_memory(request.patient_id, request.user_input, cleaned_response)
 
     return {"response": cleaned_response}
 
