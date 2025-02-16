@@ -1,25 +1,25 @@
 import os
 import re
 import sqlite3
-import openai
-import requests
 from fastapi import FastAPI, HTTPException, Depends
 import uvicorn
 from fastapi.security import HTTPBasic, HTTPBasicCredentials
 from pydantic import BaseModel, Field
 import hashlib
+import json
 
-# Read OpenAI API Key from Environment Variables
-OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
-if not OPENAI_API_KEY:
-    raise ValueError("OpenAI API Key not found. Set OPENAI_API_KEY environment variable.")
+# Read Grok API Key from Environment Variables
+GROK_API_KEY = os.getenv("GROK_API_KEY")
+if not GROK_API_KEY:
+    raise ValueError("Grok API Key not found. Set GROK_API_KEY environment variable.")
 
-openai.api_key = OPENAI_API_KEY  # Set API key for OpenAI
-client = openai.OpenAI(api_key=OPENAI_API_KEY)
+# Assuming Grok API uses a similar structure to OpenAI for requests
+import requests
+
 app = FastAPI()
 
 DB_NAME = "patient_memory.db"
-MODEL = "gpt-4o-mini"  # Use GPT-4o mini for better medical responses
+MODEL = "grok"  # Assuming this is the model name for Grok API
 QUESTION_COUNTS = 5  # Number of questions before final advice
 
 # Secure API with Basic Auth
@@ -89,7 +89,7 @@ def clean_ai_response(response):
     """Remove <think>...</think> sections from AI response."""
     return re.sub(r"<think>.*?</think>", "", response, flags=re.DOTALL).strip()
 
-# Use OpenAI API Instead of Ollama
+# Use Grok API Instead of OpenAI
 def determine_next_question(patient_id, session_id, user_input, question_count):
     """Determines the next relevant follow-up question for the patient based on chat history."""
     history = get_memory(patient_id, session_id)
@@ -119,18 +119,27 @@ def determine_next_question(patient_id, session_id, user_input, question_count):
         )
 
     try:
-        response = client.chat.completions.create(
-            model=MODEL,  # Updated OpenAI syntax
-            messages=[
-                {"role": "system", "content": "You are a medical AI chatbot conducting a triage."},
-                {"role": "user", "content": prompt}
-            ],
-            max_tokens=200,  # Limit response length
-            temperature=0.7,
+        # Assuming Grok API endpoint for chat completions
+        response = requests.post(
+            "URL_FOR_GROK_API_ENDPOINT",  # Replace with actual Grok API endpoint
+            headers={
+                "Authorization": f"Bearer {GROK_API_KEY}",
+                "Content-Type": "application/json"
+            },
+            json={
+                "model": MODEL,
+                "messages": [
+                    {"role": "system", "content": "You are a medical AI chatbot conducting a triage."},
+                    {"role": "user", "content": prompt}
+                ],
+                "max_tokens": 200,
+                "temperature": 0.7
+            }
         )
-        ai_response = response.choices[0].message.content.strip()
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"OpenAI API Error: {e}")
+        response.raise_for_status()
+        ai_response = response.json()["choices"][0]["message"]["content"].strip()
+    except requests.RequestException as e:
+        raise HTTPException(status_code=500, detail=f"Grok API Error: {e}")
 
     cleaned_response = clean_ai_response(ai_response)
     save_memory(patient_id, session_id, user_input, cleaned_response)
