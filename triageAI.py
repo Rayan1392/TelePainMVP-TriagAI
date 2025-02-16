@@ -1,10 +1,11 @@
 import re
 import sqlite3
 import requests
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Depends
 import uvicorn
+from fastapi.security import HTTPBasic, HTTPBasicCredentials
 from pydantic import BaseModel, Field
-from fastapi import HTTPException
+import hashlib
 
 OLLAMA_URL = "http://127.0.0.1:11434/api/generate"
 app = FastAPI()
@@ -12,6 +13,23 @@ app = FastAPI()
 DB_NAME = "patient_memory.db"
 MODEL = "llama3.1:8b"
 QUESTION_COUNTS = 5
+
+# Define Username & Password (store securely in env variables or a database in production)
+VALID_USERNAME = "admin"
+VALID_PASSWORD = "Admin123!"
+
+# Use HTTP Basic Authentication
+security = HTTPBasic()
+
+def verify_credentials(credentials: HTTPBasicCredentials = Depends(security)):
+    """Verify the provided username and password using Basic Auth."""
+    correct_username = hashlib.sha256(credentials.username.encode()).hexdigest() == hashlib.sha256(VALID_USERNAME.encode()).hexdigest()
+    correct_password = hashlib.sha256(credentials.password.encode()).hexdigest() == hashlib.sha256(VALID_PASSWORD.encode()).hexdigest()
+
+    if not (correct_username and correct_password):
+        raise HTTPException(status_code=401, detail="Invalid credentials")
+
+    return credentials.username  # Authenticated user
 
 def init_db():
     conn = sqlite3.connect(DB_NAME)
@@ -62,7 +80,7 @@ def determine_next_question(patient_id, session_id, user_input, question_count):
     history = get_memory(patient_id, session_id)
     conversation = "\n".join([f"Patient: {u}\nAI: {a}" for u, a in history])
 
-    if question_count == 0:
+    if question_count == 1:
         prompt = (
             f"You are an AI assistant conducting a **triage assessment** for a patient. "
             f"The patient said: '{user_input}'. "
@@ -112,7 +130,7 @@ class ChatRequest(BaseModel):
     question_count: int = Field(..., ge=0, description="Question count must be a non-negative integer")
 
 @app.post("/chat")
-def chat(request: ChatRequest):
+def chat(request: ChatRequest, username: str = Depends(verify_credentials)):
     # Validate request parameters
     if not request.patient_id.strip():
         raise HTTPException(status_code=400, detail="Patient ID cannot be empty.")
