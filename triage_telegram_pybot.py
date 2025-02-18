@@ -3,6 +3,7 @@ import requests
 import uuid
 import telebot
 from telebot import types
+from telebot.storage import StateMemoryStorage
 
 # Constants
 CHAT_API_URL = "https://chat.telepainsolutions.ca/chat"  # Your chat API URL
@@ -13,8 +14,9 @@ TELEGRAM_TOKEN = '7691070101:AAHfF0iRaH0jpOS7njeyIJ1o1FXMtfg7L7k' # @triage_ai_c
 if not TELEGRAM_TOKEN:
     raise ValueError("Telegram Bot Token is required. Set TELEGRAM_TOKEN environment variable.")
 
-# Initialize the bot
-bot = telebot.TeleBot(TELEGRAM_TOKEN)
+# Initialize the storage and bot
+storage = StateMemoryStorage()
+bot = telebot.TeleBot(TELEGRAM_TOKEN, state_storage=storage)
 
 # Function to handle the /start command
 @bot.message_handler(commands=['start'])
@@ -29,16 +31,17 @@ def start(message):
         "session_id": str(uuid.uuid4())  # Generate unique session ID
     }
 
-    # Save user info (in memory, or could be stored in a database for persistence)
-    bot.user_data[message.chat.id] = user_info
+    # Save user info in storage
+    bot.set_state(message.chat.id, user_info)
 
     # Send greeting message
     bot.reply_to(message, "Hello, I am your AI health assistant. What symptoms are you experiencing today?")
 
+
 # Function to handle user message
 @bot.message_handler(func=lambda message: True)
 def handle_message(message):
-    user_info = bot.user_data.get(message.chat.id)
+    user_info = bot.get_state(message.chat.id)
     if not user_info:
         bot.reply_to(message, "Please start the conversation by sending /start.")
         return
@@ -75,11 +78,14 @@ def handle_message(message):
 
             # Increase the question count for the next round
             user_info["question_count"] += 1
+            bot.set_state(message.chat.id, user_info)
         else:
             bot.reply_to(message, "Sorry, I couldn't process your request at the moment.")
     except requests.exceptions.RequestException as e:
         bot.reply_to(message, "There was an error connecting to the AI service.")
 
+
 # Start the bot
 if __name__ == "__main__":
     bot.polling(none_stop=True)
+
