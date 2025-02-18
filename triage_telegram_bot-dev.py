@@ -1,12 +1,13 @@
 import os
 import requests
-import uuid
 from telegram import Update
 from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, CallbackContext
+from fastapi import HTTPException
 
 # Constants
-CHAT_API_URL = "https://chat.telepainsolutions.ca/chat"  # Your chat API URL
-API_AUTHORIZATION_TOKEN = "Basic YWRtaW46QWRtaW4xMjMh"  # Replace with actual API authorization token
+CHAT_API_URL = "https://chat.telepainsolutions.ca/chat"  # Your FastAPI server URL
+API_USERNAME = "admin"  # Use the same credentials as your FastAPI server
+API_PASSWORD = "Admin123!"
 
 # Set up Telegram Bot Token
 TELEGRAM_TOKEN = '7691070101:AAHfF0iRaH0jpOS7njeyIJ1o1FXMtfg7L7k' # @triage_ai_chatbot
@@ -22,8 +23,6 @@ def start(update: Update, context: CallbackContext):
         "username": user.username,
         "first_name": user.first_name,
         "last_name": user.last_name,
-        "question_count": 1,  # Initialize question count
-        "session_id": str(uuid.uuid4())  # Generate unique session ID
     }
 
     # Save user info (in memory, or could be stored in a database for persistence)
@@ -40,37 +39,27 @@ def handle_message(update: Update, context: CallbackContext):
         return
 
     user_input = update.message.text.strip()
-    question_count = user_info.get("question_count", 1)
-    session_id = user_info.get("session_id")  # Use the unique session_id
 
     # Prepare the data to send to the /chat API
-    payload = {
-        "patient_id": str(user_info["chat_id"]),  # Use chat_id as patient_id
-        "session_id": session_id,  # Use unique session_id for the user session
+    request_data = {
+        "patient_id": user_info["chat_id"],  # Use chat_id as patient_id
+        "session_id": f"{user_info['chat_id']}_session",  # Simple session id
         "user_input": user_input,
-        "question_count": question_count,
+        "question_count": 1,  # We can change this based on the number of questions
     }
 
-    headers = {
-        'Content-Type': 'application/json',
-        'Authorization': API_AUTHORIZATION_TOKEN  # Authorization header
-    }
-
-    # Call the /chat API using the provided structure
+    # Call the /chat API
     try:
         response = requests.post(
             CHAT_API_URL,
-            headers=headers,
-            json=payload  # Directly passing the payload as JSON
+            json=request_data,
+            auth=(API_USERNAME, API_PASSWORD)  # Pass API credentials
         )
 
         # Check if the API response is successful
         if response.status_code == 200:
-            api_response = response.json().get("response", "Sorry, I couldn't get a response.")
+            api_response = response.json()["response"]
             update.message.reply_text(api_response)  # Send the response to the user
-
-            # Increase the question count for the next round
-            user_info["question_count"] += 1
         else:
             update.message.reply_text("Sorry, I couldn't process your request at the moment.")
     except requests.exceptions.RequestException as e:
