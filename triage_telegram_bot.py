@@ -4,6 +4,7 @@ import uuid
 from telegram import Update
 from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, CallbackContext
 
+
 # Constants
 CHAT_API_URL = "https://chat.telepainsolutions.ca/chat"  # Your chat API URL
 API_AUTHORIZATION_TOKEN = "Basic YWRtaW46QWRtaW4xMjMh"  # Replace with actual API authorization token
