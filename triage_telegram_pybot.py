@@ -7,7 +7,7 @@ from telebot.storage import StateMemoryStorage
 
 # Constants
 CHAT_API_URL = "https://chat.telepainsolutions.ca/chat"  # Your chat API URL
-API_AUTHORIZATION_TOKEN = "Basic YWRtaW46QWRtaW4xMjMh"  # Replace with actual API authorization token
+API_AUTHORIZATION_TOKEN = "*******"  # Replace with actual API authorization token
 
 # Set up Telegram Bot Token
 TELEGRAM_TOKEN = '7691070101:AAHfF0iRaH0jpOS7njeyIJ1o1FXMtfg7L7k' # @triage_ai_chatbot
