@@ -6,6 +6,7 @@ import uvicorn
 from fastapi.security import HTTPBasic, HTTPBasicCredentials
 from pydantic import BaseModel, Field
 import hashlib
+import os
 
 OLLAMA_URL = "http://127.0.0.1:11434/api/generate"
 app = FastAPI()
@@ -15,8 +16,8 @@ MODEL = "llama3.1:8b"
 QUESTION_COUNTS = 5
 
 # Define Username & Password (store securely in env variables or a database in production)
-VALID_USERNAME = "admin"
-VALID_PASSWORD = "Admin123!"
+VALID_USERNAME = os.getenv("TRIAGE_CHATBOT_USERNAME") 
+VALID_PASSWORD = os.getenv("TRIAGE_CHATBOT_PASSWORD")
 
 # Use HTTP Basic Authentication
 security = HTTPBasic()

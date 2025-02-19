@@ -6,11 +6,11 @@ from fastapi import HTTPException
 
 # Constants
 CHAT_API_URL = "https://chat.telepainsolutions.ca/chat"  # Your FastAPI server URL
-API_USERNAME = "admin"  # Use the same credentials as your FastAPI server
-API_PASSWORD = "Admin123!"
+API_USERNAME = os.getenv("TRIAGE_CHATBOT_USERNAME") 
+API_PASSWORD = os.getenv("TRIAGE_CHATBOT_PASSWORD")
 
 # Set up Telegram Bot Token
-TELEGRAM_TOKEN = '7691070101:AAHfF0iRaH0jpOS7njeyIJ1o1FXMtfg7L7k' # @triage_ai_chatbot
+TELEGRAM_TOKEN = os.getenv('TRIAGE_AI_CHATBOT_TOKEN') # @triage_ai_chatbot
 if not TELEGRAM_TOKEN:
     raise ValueError("Telegram Bot Token is required. Set TELEGRAM_TOKEN environment variable.")
 

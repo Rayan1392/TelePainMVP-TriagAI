@@ -23,8 +23,8 @@ MODEL = "gpt-4o-mini"  # Use GPT-4o mini for better medical responses
 QUESTION_COUNTS = 5  # Number of questions before final advice
 
 # Secure API with Basic Auth
-VALID_USERNAME = "admin"
-VALID_PASSWORD = "Admin123!"
+VALID_USERNAME = os.getenv("TRIAGE_CHATBOT_USERNAME") 
+VALID_PASSWORD = os.getenv("TRIAGE_CHATBOT_PASSWORD")
 security = HTTPBasic()
 
 def verify_credentials(credentials: HTTPBasicCredentials = Depends(security)):

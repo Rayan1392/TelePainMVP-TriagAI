@@ -10,7 +10,7 @@ CHAT_API_URL = "https://chat.telepainsolutions.ca/chat"  # Your chat API URL
 API_AUTHORIZATION_TOKEN = "Basic YWRtaW46QWRtaW4xMjMh"  # Replace with actual API authorization token
 
 # Set up Telegram Bot Token
-TELEGRAM_TOKEN = '7691070101:AAHfF0iRaH0jpOS7njeyIJ1o1FXMtfg7L7k' # @triage_ai_chatbot
+TELEGRAM_TOKEN = os.getenv('TRIAGE_AI_CHATBOT_TOKEN') # @triage_ai_chatbot
 if not TELEGRAM_TOKEN:
     raise ValueError("Telegram Bot Token is required. Set TELEGRAM_TOKEN environment variable.")
 
